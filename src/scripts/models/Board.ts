@@ -1,12 +1,58 @@
 import { Field } from "./Field";
 
+/**
+ * Модель доски
+ * Содержит коллекцию ячеек
+ * Создает, выводит на экран и обрабатывает инпут ячеек
+ *
+ * @export
+ * @class Board
+ * @extends {Phaser.Events.EventEmitter}
+ */
 export class Board extends Phaser.Events.EventEmitter {
+    /**
+     * Ссылка на текущую игровую сцену (используется во вьюшке ячеек)
+     *
+     * @private
+     * @type {Phaser.Scene}
+     */
     private _scene: Phaser.Scene = null;
+    /**
+     * Число строк доски
+     *
+     * @private
+     * @type {number}
+     */
     private _rows: number = 0;
+    /**
+     * Число столбцов доски
+      *
+     * @private
+     * @type {number}
+     */
     private _cols: number = 0;
+    /**
+     * Число бомб на доске
+     *
+     * @private
+     * @type {number}
+     */
     private _bombs: number = 0;
+    /**
+     * Массив с объектами моделей ячеек
+     *
+     * @private
+     * @type {Field[]}
+     */
     private _fields: Field[] = [];
 
+    /**
+     *Creates an instance of Board.
+     * @param {Phaser.Scene} scene
+     * @param {number} rows
+     * @param {number} cols
+     * @param {number} bombs
+     */
     constructor(scene: Phaser.Scene, rows: number, cols: number, bombs: number) {
         super();
         this._scene = scene;
@@ -17,30 +63,72 @@ export class Board extends Phaser.Events.EventEmitter {
         this._create();
     }
 
+    /**
+     *
+     *
+     * @readonly
+     * @type {number}
+     */
     public get cols(): number {
         return this._cols;
     }
     
+    /**
+     *
+     *
+     * @readonly
+     * @type {number}
+     */
     public get rows(): number {
         return this._rows;
     }
 
+    /**
+     * Флаг успешности расстановки флагов на доске
+     * Возвращает {true} в случае, если все заминированные ячейки отмечены флагами
+     *
+     * @readonly
+     * @type {boolean}
+     */
     public get completed(): boolean {
         return this._fields.filter(field => field.completed).length === this._bombs;
     }
 
+    /**
+     * Возвращает число ячеек доски, отмеченных флагами
+     *
+     * @readonly
+     * @type {number}
+     */
     public get countMarked(): number {
         return this._fields.filter(field => field.marked).length;
     }
 
+    /**
+     * Возвращает ячейку доски по заданным параметрам строки и столбцу
+     *
+     * @param {number} row
+     * @param {number} col
+     * @returns {Field}
+     */
     public getField(row: number, col: number): Field {
         return this._fields.find(field => field.row === row && field.col === col);
     }
 
+    /**
+     * Открывает все закрытые ячейки
+     *
+     */
     public open(): void {
         this._fields.forEach(field => field.open());
     }
 
+    /**
+     * Рекурсивно открывает все соседние закрытые ячейки относительно заданной
+     * до тех пор, пока не откроется ячейка со значением
+     *
+     * @param {Field} field
+     */
     public openClosestFields(field: Field): void {
         field.getClosestFields().forEach(item => {// для каждой соседней ячейки
             if (item.closed) {// если она закрыта
@@ -53,12 +141,25 @@ export class Board extends Phaser.Events.EventEmitter {
         });
     }
 
+    /**
+     * Инициализирует игровую доску: 
+     * создает ячейки, устанавливает в них бомбы и значения
+     *
+     * @private
+     */
     private _create(): void {
         this._createFields();
         this._createBombs();
         this._createValues(); 
     }
 
+    /**
+     * Обработчик клика по ячейке
+     *
+     * @private
+     * @param {Field} field
+     * @param {Phaser.Input.Pointer} pointer
+     */
     private _onFieldClick(field: Field, pointer: Phaser.Input.Pointer): void {
         if (pointer.leftButtonDown()) {
             this.emit(`left-click`, field);
@@ -67,6 +168,12 @@ export class Board extends Phaser.Events.EventEmitter {
         }
     }
 
+    /**
+     * Создает модели ячеек и заполняет ими массив this._fields
+     * устанавливает обработчик инпута по каждой ячейке
+     * 
+     * @private
+     */
     private _createFields(): void {
         for (let row = 0; row < this._rows; row++) {
             for (let col = 0; col < this._cols; col++) {
@@ -77,6 +184,11 @@ export class Board extends Phaser.Events.EventEmitter {
         }
     }
 
+    /**
+     * Расставляет требуемой число бомб в рандомных ячейках доски
+     *
+     * @private
+     */
     private _createBombs(): void {
         let count = this._bombs; // определить число бомб для генерации
     
@@ -90,6 +202,12 @@ export class Board extends Phaser.Events.EventEmitter {
         }
     }
 
+    /**
+     * Устанавливает числовые значения во все требуемые ячейки
+     * на основе того, как расставлены бомбы на доске
+     *
+     * @private
+     */
     private _createValues() {
         // для каждого поля на доске
         this._fields.forEach(field => {
